@@ -1,0 +1,46 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Emphasys NAHRO 2026 loop</title>
+<style>
+  @font-face { font-family: Poppins; font-weight: 400; src: url(assets/fonts/Poppins-400.woff2) format('woff2'); }
+  @font-face { font-family: Poppins; font-weight: 500; src: url(assets/fonts/Poppins-500.woff2) format('woff2'); }
+  @font-face { font-family: Poppins; font-weight: 700; src: url(assets/fonts/Poppins-700.woff2) format('woff2'); }
+  html, body { margin: 0; background: #111; color: #ccc; font: 14px system-ui; }
+  canvas { display: block; width: 100%; max-width: 1920px; height: auto; }
+  #bar { padding: 8px; display: flex; gap: 12px; align-items: center; }
+  #bar input[type=range] { flex: 1; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div id="bar"><button id="play">Play</button><input id="seek" type="range" min="0" max="1799" value="0"><span id="fr">0</span></div>
+<script src="src/config.js"></script>
+<script src="src/lib.js"></script>
+<script src="src/scenes.js"></script>
+<script>
+  // Preview player + render hook. render.js calls window.draw(frame).
+  const ctx = document.getElementById('c').getContext('2d');
+  const seek = document.getElementById('seek'), fr = document.getElementById('fr');
+  window.draw = f => { SCENES.renderFrame(ctx, f); return true; };
+  function loadImage(src) {
+    return new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+  }
+  (async () => {
+    await Promise.all([400, 500, 700].map(w => document.fonts.load(`${w} 100px Poppins`)));
+    window.ASSETS = { wordmark: await loadImage('assets/logo-wordmark-reversed.png') };
+    window.READY = true;
+    let f = 0, playing = false, last = 0;
+    const show = n => { f = n; seek.value = n; fr.textContent = n; window.draw(n); };
+    seek.oninput = () => show(+seek.value);
+    document.getElementById('play').onclick = e => { playing = !playing; e.target.textContent = playing ? 'Pause' : 'Play'; };
+    (function tick(ts) {
+      if (playing && ts - last >= 1000 / CONFIG.fps - 1) { last = ts; show((f + 1) % CONFIG.frames); }
+      requestAnimationFrame(tick);
+    })(0);
+    show(0);
+  })();
+</script>
+</body>
+</html>
