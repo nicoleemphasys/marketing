@@ -6,7 +6,10 @@
     "render": "node render.js video",
     "preview": "node render.js video --scale 0.5 --crf 26 --preset veryfast --out out/preview-540p.mp4",
     "loopcheck": "node render.js loopcheck",
-    "stills": "node render.js stills 0,40,85,150,200,250,300,345,390,450,500,570,630,680,750,810,860,930,990,1040,1110,1170,1220,1290,1350,1400,1470,1560,1650,1740,1799"
+    "stills": "node render.js stills 0,40,85,150,200,250,300,345,390,450,500,570,630,680,750,810,860,930,990,1040,1110,1170,1220,1290,1350,1400,1470,1560,1650,1740,1799",
+    "music": "python3 music.py out/music.wav && ffmpeg -y -v error -i out/emphasys-nahro-2026-loop.mp4 -i out/music.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 256k -shortest -movflags +faststart out/emphasys-nahro-2026-loop-music.mp4"
   },
-  "devDependencies": { "playwright": "^1.56.1" }
+  "devDependencies": {
+    "playwright": "^1.56.1"
+  }
 }
