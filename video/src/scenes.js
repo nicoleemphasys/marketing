@@ -516,7 +516,11 @@
   const SMALL = { x: 140, y: 250, w: 677, h: 197, size: 120, tx: 205, ty: 390 };
   const REPLY = { x: 980, y: 620, w: 855, h: 217, size: 136, tx: 1040, ty: 772 };
   const navyBubble = (ctx, g) => bubble(ctx, g.x, g.y, g.w, g.h, [60, 60, 60, 8], C.navy, copy('6.1')[0], g.size, g.tx, g.ty);
-  const replyBubble = (ctx, g) => bubble(ctx, g.x, g.y, g.w, g.h, [60, 60, 8, 60], C.orange, copy('6.2')[1], g.size, g.tx, g.ty);
+  const replyBubble = (ctx, g) => {
+    // bubble grows to fit the reply, anchored to its right edge
+    const w = Math.max(g.w, L.textWidth(ctx, copy('6.2')[1], g.size) + 130), x = g.x + g.w - w;
+    bubble(ctx, x, g.y, w, g.h, [60, 60, 8, 60], C.orange, copy('6.2')[1], g.size, x + 65, g.ty);
+  };
   fx['6.1'] = (ctx, f, t, b) => {
     L.background(ctx, 'paper', f);
     vessel(ctx, 's06');

@@ -67,7 +67,7 @@ window.CONFIG = {
     { id: '5.2', start: 810,  end: 860,  bg: 'paper',  copy: ['Done from', 'the kitchen', 'table.'],    motion: 'phone slides up, card pops 105%, rings' },
     { id: '5.3', start: 860,  end: 930,  bg: 'paper',  copy: ['Faster answers', 'for *families.*'],     motion: 'mask wipe 12f per line' },
     { id: '6.1', start: 930,  end: 990,  bg: 'paper',  copy: ['Hard day?'],                             motion: 'navy bubble pops from bottom-left' },
-    { id: '6.2', start: 990,  end: 1040, bg: 'paper',  copy: ['Hard day?', 'We pick up.'],              motion: 'bubble shrinks, typing dots 12f, orange reply' },
+    { id: '6.2', start: 990,  end: 1040, bg: 'paper',  copy: ['Hard day?', 'We\u2019ve got you.'],     motion: 'bubble shrinks, typing dots 12f, orange reply' },
     { id: '6.3', start: 1040, end: 1110, bg: 'mist',   copy: ['Real people', 'on the *other end.*'],    motion: 'bubbles fly off, rise & unblur' },
     { id: '7.1', start: 1110, end: 1170, bg: 'paper',  copy: ['See it *sooner.*'],                      motion: 'bars grow, orange line draws' },
     { id: '7.2', start: 1170, end: 1220, bg: 'mist',   copy: ['Across', 'every', '*property.*'],        motion: 'dot map ripple' },
