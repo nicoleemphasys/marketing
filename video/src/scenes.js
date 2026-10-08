@@ -678,23 +678,8 @@
   }
   // o: {cardS, jarA(i), tileS(k), labelP(i), glow(i), landed, tok: {x, y, rot, size, alpha, string, trail}}
   function activation(ctx, o) {
+    // transparent: no card behind the graphic, drawn straight on the background
     L.withScale(ctx, AX + AW / 2, AY + AH / 2, o.cardS, () => {
-      ctx.save();
-      L.shadow(ctx, 0.28, 60, 24);
-      ctx.fillStyle = '#0A2C60';
-      L.roundRect(ctx, AX, AY, AW, AH, 30);
-      ctx.fill();
-      ctx.restore();
-      ctx.save();
-      L.roundRect(ctx, AX, AY, AW, AH, 30);
-      ctx.clip();
-      const g = ctx.createRadialGradient(AX + AW * 0.75, AY + 40, 0, AX + AW * 0.75, AY + 40, AW * 0.8);
-      g.addColorStop(0, 'rgba(67,150,230,0.30)');
-      g.addColorStop(1, 'rgba(67,150,230,0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(AX, AY, AW, AH);
-      ctx.restore();
-
       ctx.save();
       ctx.translate(AX, AY);
       ctx.scale(AS, AS);
@@ -710,8 +695,8 @@
         ctx.moveTo(x0, 95); ctx.lineTo(x0, 240 - r); ctx.quadraticCurveTo(x0, 240, x0 + r, 240);
         ctx.lineTo(x0 + w - r, 240); ctx.quadraticCurveTo(x0 + w, 240, x0 + w, 240 - r); ctx.lineTo(x0 + w, 95);
         ctx.lineCap = 'round';
-        ctx.strokeStyle = 'rgba(255,255,255,0.62)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(5,46,101,0.55)';
+        ctx.lineWidth = 1.6;
         ctx.stroke();
         const gl = o.glow ? o.glow(i) : 0;
         if (gl > 0) {
@@ -730,7 +715,7 @@
         if (sc <= 0.001) return;
         const [x, y] = actXY(tl.i, tl.c, tl.r);
         L.withScale(ctx, x + 10, y + 10, sc, () => {
-          ctx.fillStyle = tl.v === 2 ? C.sky : 'rgba(255,255,255,0.2)';
+          ctx.fillStyle = tl.v === 2 ? C.sky : 'rgba(33,67,124,0.22)';
           L.roundRect(ctx, x, y, 20, 20, 3.5);
           ctx.fill();
         });
@@ -739,7 +724,7 @@
       ACT.jars.forEach((j, i) => {
         const p = o.labelP(i);
         if (p <= 0) return;
-        L.text(ctx, 0, { x: jarX(i) + 46, y: 261 + 6 * (1 - p), size: 13, lh: 15, lines: j.label, align: 'center', color: '#FFFFFF', alpha: p });
+        L.text(ctx, 0, { x: jarX(i) + 46, y: 261 + 6 * (1 - p), size: 13, lh: 15, lines: j.label, align: 'center', color: C.deepNavy, alpha: p });
       });
       // answer token
       const tk = o.tok;
@@ -747,7 +732,7 @@
         if (tk.string > 0) {
           ctx.save();
           ctx.globalAlpha = tk.string;
-          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.strokeStyle = 'rgba(5,46,101,0.5)';
           ctx.lineWidth = 1.2;
           ctx.beginPath(); ctx.moveTo(HANG[0], 6); ctx.lineTo(tk.x, tk.y - tk.size * 0.6); ctx.stroke();
           ctx.restore();
