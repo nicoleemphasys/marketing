@@ -1,6 +1,6 @@
 # Emphasys NAHRO 2026 booth loop: code build
 
-A 60-second 1920×1080 / 30 fps loop (1800 frames) built only from type and shapes. It is drawn on an HTML canvas and rendered with headless Chromium and ffmpeg. There are no Remotion license requirements.
+A 1920×1080 / 30 fps loop, 72 s long (2160 frames). The 1800-frame beat timeline is stretched by `timeScale: 1.2` in `src/config.js`; set it to 1.0 for the original 60 s pace built only from type and shapes. It is drawn on an HTML canvas and rendered with headless Chromium and ffmpeg. There are no Remotion license requirements.
 
 ## Layout
 
@@ -8,10 +8,10 @@ A 60-second 1920×1080 / 30 fps loop (1800 frames) built only from type and shap
 |---|---|
 | `src/config.js` | Single source of truth: brand colors, font, flash frames, vessel tags, and all 30 beats (frames, exact copy, background, motion). `*words*` = orange phrase. |
 | `src/lib.js` | Named animations from the look guide: rise & unblur, kinetic stack, mask wipe, pop & settle, roofline draw, plus backgrounds (paper, mist, sky, orange, navy) with slowly drifting glows. |
-| `src/scenes.js` | One renderer per beat: word flicker, scale slam, whip cut, tile house, vessel tag, sheets, calendar, checks, route, phone, chat bubbles, chart, dot map, year reel, logo close. |
+| `src/scenes.js` | One renderer per beat: word flicker, scale slam, whip cut, tile house, vessel tag, sheets, calendar, checks, route, phone, chat bubbles, chart, dot map, year reel, booth activation (five value jars + orange answer token, data in `CONFIG.activation`), logo close. |
 | `index.html` | Preview player (open in Chrome, scrub/play). Also the page `render.js` drives. |
 | `render.js` | Renders frames in parallel and pipes them to ffmpeg (H.264, CRF 18). Adds about 6% temporal film grain there. |
-| `music.py` | Original soundtrack, synthesized in code (no licensed audio): 120 BPM in F major, so one beat = 15 frames and the impacts land on the slams ("That’s you.", "Ready.", "2026", logo close). It's mixed circularly, so the audio loops seamlessly with the picture. Needs numpy + scipy. |
+| `music.py` | Original soundtrack, synthesized in code (no licensed audio): 120 BPM ÷ timeScale (100 BPM now) in F major, so one beat = 15 source frames and the impacts land on the slams ("That’s you.", "Ready.", "2026", logo close). It's mixed circularly, so the audio loops seamlessly with the picture. Needs numpy + scipy. |
 | `assets/` | Poppins 400/500/700 (OFL), the original logo, and a reversed wordmark used on the navy close. The animated roofline is the logo's roof. |
 
 ## Commands
@@ -20,12 +20,12 @@ A 60-second 1920×1080 / 30 fps loop (1800 frames) built only from type and shap
 npm install            # playwright (Chromium) – ffmpeg must be on PATH
 npm run render         # out/emphasys-nahro-2026-loop.mp4  (final, 1080p, CRF 18)
 npm run preview        # out/preview-540p.mp4               (low-res review copy)
-npm run loopcheck      # out/loop-check.mp4  (frames 1740–1799 then 0–150)
+npm run loopcheck      # out/loop-check.mp4  (last 2 s, then the first 5 s)
 npm run music          # out/music.wav + out/emphasys-nahro-2026-loop-music.mp4 (run after render)
 npm run stills         # out/stills/frameNNNN.png at each beat start
 ```
 
-Every frame is a pure function of the frame number. Frame 1799 un-draws the roofline back to frame 0's state (white, chevron drawn 45%), and the background glows drift on a 1800-frame period, so the loop has no visible seam.
+Every frame is a pure function of the frame number. The last frame un-draws the roofline back to frame 0's state (white, chevron drawn 45%), and the background glows drift on a 1800-frame period, so the loop has no visible seam.
 
 ## Notes / decisions
 

@@ -15,7 +15,7 @@
 </head>
 <body>
 <canvas id="c" width="1920" height="1080"></canvas>
-<div id="bar"><button id="play">Play</button><input id="seek" type="range" min="0" max="1799" value="0"><span id="fr">0</span></div>
+<div id="bar"><button id="play">Play</button><input id="seek" type="range" min="0" max="2159" value="0"><span id="fr">0</span></div>
 <script src="src/config.js"></script>
 <script src="src/lib.js"></script>
 <script src="src/scenes.js"></script>
@@ -36,9 +36,10 @@
     seek.oninput = () => show(+seek.value);
     document.getElementById('play').onclick = e => { playing = !playing; e.target.textContent = playing ? 'Pause' : 'Play'; };
     (function tick(ts) {
-      if (playing && ts - last >= 1000 / CONFIG.fps - 1) { last = ts; show((f + 1) % CONFIG.frames); }
+      if (playing && ts - last >= 1000 / CONFIG.fps - 1) { last = ts; show((f + 1) % SCENES.totalFrames); }
       requestAnimationFrame(tick);
     })(0);
+    seek.max = SCENES.totalFrames - 1;
     show(0);
   })();
 </script>

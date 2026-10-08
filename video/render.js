@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Renders the loop with headless Chromium and pipes frames into ffmpeg.
-//   node render.js video [--out out/file.mp4] [--from 0 --to 1799] [--scale 0.5] [--crf 18]
-//   node render.js loopcheck            (frames 1740-1799 then 0-150)
+//   node render.js video [--out out/file.mp4] [--from 0 --to TOTAL-1] [--scale 0.5] [--crf 18]
+//   node render.js loopcheck            (last 2 s, then the first 5 s)
 //   node render.js stills 0,40,85       (PNG stills, no grain)
 const path = require('path');
 const fs = require('fs');
@@ -13,6 +13,10 @@ const args = process.argv.slice(2);
 const mode = args[0] || 'video';
 const opt = (k, d) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : d; };
 const WORKERS = +opt('workers', 4);
+const vm = require('vm');
+const sandbox = { window: {} };
+vm.runInNewContext(fs.readFileSync(path.join(__dirname, 'src/config.js'), 'utf8'), sandbox);
+const TOTAL = Math.round(sandbox.window.CONFIG.frames * sandbox.window.CONFIG.timeScale);
 const GRAIN = opt('grain', '4'); // ffmpeg temporal film grain (strength 0-100)
 
 async function main() {
@@ -21,10 +25,10 @@ async function main() {
   if (mode === 'stills') {
     frames = args[1].split(',').map(Number);
   } else if (mode === 'loopcheck') {
-    frames = [...range(1740, 1799), ...range(0, 150)];
+    frames = [...range(TOTAL - 60, TOTAL - 1), ...range(0, 150)];
     out = opt('out', 'out/loop-check.mp4');
   } else {
-    frames = range(+opt('from', 0), +opt('to', 1799));
+    frames = range(+opt('from', 0), +opt('to', TOTAL - 1));
     out = opt('out', 'out/emphasys-nahro-2026-loop.mp4');
   }
 

@@ -5,7 +5,9 @@ window.CONFIG = {
   width: 1920,
   height: 1080,
   fps: 30,
-  frames: 1800,
+  frames: 1800,          // source timeline (beat frames below)
+  // Stretches the whole timeline: 1.2 => 2160 output frames (72 s), music 100 BPM.
+  timeScale: 1.2,
 
   colors: {
     white: '#FFFFFF',
@@ -31,6 +33,19 @@ window.CONFIG = {
     s05: { label: 'Better resident experiences', index: 2 },
     s06: { label: 'Stronger staff support', index: 3 },
     s07: { label: 'More useful insight', index: 4 },
+  },
+
+  // Booth activation (scene 9): jars of tiles, one per value. Rows are listed
+  // bottom -> top, 3 columns: 0 empty, 1 tile, 2 highlighted (sky) tile.
+  activation: {
+    jars: [
+      { label: ['Clearer', 'Workflows'],            rows: [[1, 1, 2], [1, 1, 1], [1, 2, 1], [1, 1, 0]] },
+      { label: ['Compliance', 'Confidence'],        rows: [[1, 1, 1], [1, 2, 1], [1, 1, 0]] },
+      { label: ['Better Resident', 'Experiences'],  rows: [[1, 2, 1], [1, 1, 1], [1, 1, 1], [2, 1, 1], [1, 0, 0]] },
+      { label: ['Stronger', 'Staff Support'],       rows: [[1, 1, 1], [1, 1, 2], [1, 1, 1]] },
+      { label: ['More Useful', 'Insight'],          rows: [[1, 1, 1], [2, 1, 1], [1, 0, 0]] },
+    ],
+    drop: { jar: 2, col: 1, row: 4 },   // where the orange token lands
   },
 
   beats: [
@@ -60,8 +75,8 @@ window.CONFIG = {
     { id: '8.1', start: 1290, end: 1350, bg: 'paper',  copy: ['Since', '1976'],                         motion: 'slot reel from 1976 upward' },
     { id: '8.2', start: 1350, end: 1400, bg: 'orange', copy: ['2026'],                                  motion: 'lands with bounce + ghost echo' },
     { id: '8.3', start: 1400, end: 1470, bg: 'paper',  copy: ['50 years of', 'showing up for', 'the people who', '*house people.*'], motion: 'kinetic stack 6f apart' },
-    { id: '9.1', start: 1470, end: 1560, bg: 'paper',  copy: ['What makes', '*home*', '*possible?*'],   motion: 'house returns with empty slot' },
-    { id: '9.2', start: 1560, end: 1650, bg: 'paper',  copy: ['Come add', '*your tile.*', 'Booth #1504'], motion: 'orange tile drops in, booth pill pops' },
+    { id: '9.1', start: 1470, end: 1560, bg: 'paper',  copy: ['What makes', '*home*', '*possible?*'],   motion: 'booth activation card builds: jars, tiles, hanging token' },
+    { id: '9.2', start: 1560, end: 1650, bg: 'paper',  copy: ['Come drop', '*your answer in.*', 'Booth #1504'], motion: 'orange token drops into a jar, booth pill pops' },
     { id: '9.3', start: 1650, end: 1740, bg: 'navy',   copy: ['For the people who *house people.*'],    motion: 'roofline draws over logo, tagline rises' },
     { id: '9.4', start: 1740, end: 1800, bg: 'paper',  copy: [],                                        motion: 'clear to white, roofline un-draws to frame 0' },
   ],

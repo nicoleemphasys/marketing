@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Original, procedurally synthesized soundtrack for the booth loop.
 
-120 BPM, F major (I-V-vi-IV), exactly 60 s = 120 beats = 1800 frames.
+120 BPM x timeScale, F major (I-V-vi-IV), 120 beats = 1800 source frames.
 One beat = 15 video frames, so the slams/impacts land on the beat.
 Everything (note tails, reverb) is mixed circularly, so the audio loops
 seamlessly with the video: the last bar (C, the V chord) resolves into bar 0.
@@ -15,13 +15,16 @@ from scipy.signal import butter, sosfilt
 
 SR = 48000
 FPS = 30
-N = 60 * SR
-BEAT = SR // 2          # 120 BPM
+# timeScale in src/config.js stretches the whole loop (1.2 -> 72 s, 100 BPM)
+import re, pathlib
+SCALE = float(re.search(r'timeScale:\s*([\d.]+)', (pathlib.Path(__file__).parent / 'src/config.js').read_text()).group(1))
+N = int(round(60 * SCALE * SR))
+BEAT = int(round(SR / 2 * SCALE))   # 120 BPM / SCALE; one beat = 15 source frames
 rng = np.random.default_rng(1976)
 
 
 def fr(f):              # video frame -> sample
-    return int(round(f * SR / FPS))
+    return int(round(f * SCALE * SR / FPS))
 
 
 def bt(b):              # beat index -> sample
@@ -217,7 +220,7 @@ for b in range(120):
     # bass (8ths, sidechain-pumped below)
     if sec in ('intro_kick', 'groove', 'build', 'punch'):
         for k in range(2):
-            music.add(s0 + k * BEAT // 2, lp(bass(ch['bass'], 0.24), 900), 0.17)
+            music.add(s0 + k * BEAT // 2, lp(bass(ch['bass'], 0.24 * SCALE), 900), 0.17)
     # arp (16ths in groove, 8ths in quiet parts)
     if sec != 'stop':
         step = 4 if sec in ('groove', 'build', 'punch', 'reel') else 2
@@ -232,7 +235,7 @@ for b in range(120):
     if b % 4 == 0:
         g = {'stop': 0.22, 'close': 0.0}.get(sec, 0.34)
         if g:
-            p = pad(ch['pad'], 2.0)
+            p = pad(ch['pad'], 2.0 * SCALE)
             music.add(s0, p, g)
             verb_send.add(s0, p, g * 0.4)
 
@@ -254,15 +257,15 @@ for f in IMPACTS:
 for i in range(16):
     s = fr(600) + int(i * fr(30) / 16)
     drums.add(s, clap(), 0.08 + 0.2 * i / 15, 0)
-fx.add(fr(630) - fr(30), riser(1.0), 0.2)
+fx.add(fr(630) - fr(30), riser(fr(30) / SR), 0.2)
 
 # --- 8.1 year reel: accelerating roll + riser into 2026
 t = 0.0
 while t < 1.95:
-    drums.add(fr(1290) + int(t * SR), clap(), 0.06 + 0.22 * t / 2)
+    drums.add(fr(1290) + int(t * SR * SCALE), clap(), 0.06 + 0.22 * t / 2)
     t += 0.25 * (1 - t / 2.3) + 0.03
-fx.add(fr(1350) - SR * 2, riser(2.0), 0.24)
-music.add(fr(1290), pad(CHORDS[3]['pad'], 2.0), 0.14)
+fx.add(fr(1350) - fr(60), riser(fr(60) / SR), 0.24)
+music.add(fr(1290), pad(CHORDS[3]['pad'], 2.0 * SCALE), 0.14)
 
 # --- small hits that follow the picture
 fx.add(fr(450), whoosh(0.35), 0.22)                    # 3.2 whip cut
@@ -275,12 +278,12 @@ fx.add(fr(822), bell(84, 1.2), 0.08)                   # 5.2 "Submitted"
 fx.add(fr(931), pop(), 0.14, -0.3)                     # 6.1 bubble
 fx.add(fr(1010), pop(700, 1500), 0.14, 0.3)           # 6.2 reply
 fx.add(fr(1040), whoosh(0.3), 0.16)                    # 6.3 bubbles fly off
-fx.add(fr(1566), whoosh(0.3), 0.14)                    # 9.2 tile drop: whoosh, land, chime
+fx.add(fr(1566), whoosh(0.3), 0.14)                    # 9.2 token drop: whoosh, land, chime
 fx.add(fr(1575), bell(77, 1.8), 0.10)
 verb_send.add(fr(1575), bell(77, 1.8), 0.08)
 
 # --- 9.3 navy close: big F chord swell + bell motif for the tagline
-close = pad([41, 53, 57, 60, 65, 69], 3.0, attack=0.05, release=0.8)
+close = pad([41, 53, 57, 60, 65, 69], 3.0 * SCALE, attack=0.05, release=0.8)
 music.add(fr(1650), close, 0.5)
 verb_send.add(fr(1650), close, 0.14)
 for m, d in ((72, 1.0), (77, 1.5), (81, 2.0), (79, 3.0), (77, 3.5)):

@@ -21,7 +21,6 @@
   const TILE = [['sky', 'orange', 'navy', 'sky'], ['navy', 'orange', 'sky', 'navy'], ['orange', 'navy', 'sky', 'orange']];
   const tileColor = { sky: C.sky, orange: C.orange, navy: C.navy };
   const tileXY = k => [1400 + 112 * (k % 4), 470 + 112 * Math.floor(k / 4)];
-  const SLOT = 6; // row 1, col 2: the empty slot in scene 9
 
   function dashedTile(ctx, x, y, a) {
     if (a <= 0) return;
@@ -605,7 +604,7 @@
   };
 
   // ===== Scene 8 =====
-  const year = t => (t < 10 ? 1976 : 1976 + 44 * E.inCubic(prog(t, 10, 50)));
+  const year = t => (t < 8 ? 1976 : 1976 + 44 * Math.pow(prog(t, 8, 52), 2));
   fx['8.1'] = (ctx, f, t, b) => {
     L.background(ctx, 'paper', f);
     L.text(ctx, t, { x: 143, y: 207, size: 86, lines: [b.copy[0]], color: C.navy, motion: 'rise', start: 0 });
@@ -653,46 +652,178 @@
     L.text(ctx, t, { x: 145, y: 390, size: 130, lh: 130, lines: b.copy, motion: 'stack', start: 2, stagger: 6 });
   };
 
-  // ===== Scene 9 =====
+  // ===== Scene 9: booth activation (jars of value tiles + orange answer token) =====
+  // Drawn in the coordinates of the booth graphic (549 x 291), scaled onto a navy card.
+  const ACT = CONFIG.activation;
+  const AS = 1.5, AW = 549 * AS, AH = 291 * AS, AX = 1840 - AW, AY = 540 - AH / 2;
+  const jarX = i => 17 + 105.5 * i;
+  const actXY = (i, c, r) => [jarX(i) + 11 + 25 * c, 204 - 25 * r]; // tile top-left, 20x20
+  const ACT_TILES = [];
+  ACT.jars.forEach((j, i) => j.rows.forEach((row, r) => row.forEach((v, c) => v && ACT_TILES.push({ i, r, c, v }))));
+  ACT_TILES.sort((a, b) => a.r - b.r || a.i - b.i || a.c - b.c); // ripple bottom-up
+  const HANG = [272, 48];
+  const LAND = (() => { const d = ACT.drop, [x, y] = actXY(d.jar, d.col, d.row); return [x + 10, y + 10]; })();
+
+  function token(ctx, x, y, rot, size, alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.shadowColor = 'rgba(247,107,19,0.55)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = C.orange;
+    L.roundRect(ctx, -size / 2, -size / 2, size, size, size * 0.18);
+    ctx.fill();
+    ctx.restore();
+  }
+  // o: {cardS, jarA(i), tileS(k), labelP(i), glow(i), landed, tok: {x, y, rot, size, alpha, string, trail}}
+  function activation(ctx, o) {
+    L.withScale(ctx, AX + AW / 2, AY + AH / 2, o.cardS, () => {
+      ctx.save();
+      L.shadow(ctx, 0.28, 60, 24);
+      ctx.fillStyle = '#0A2C60';
+      L.roundRect(ctx, AX, AY, AW, AH, 30);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      L.roundRect(ctx, AX, AY, AW, AH, 30);
+      ctx.clip();
+      const g = ctx.createRadialGradient(AX + AW * 0.75, AY + 40, 0, AX + AW * 0.75, AY + 40, AW * 0.8);
+      g.addColorStop(0, 'rgba(67,150,230,0.30)');
+      g.addColorStop(1, 'rgba(67,150,230,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(AX, AY, AW, AH);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(AX, AY);
+      ctx.scale(AS, AS);
+      // jars
+      ACT.jars.forEach((j, i) => {
+        const a = o.jarA(i);
+        if (a <= 0) return;
+        const x0 = jarX(i), w = 92, r = 16;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.translate(0, 8 * (1 - a));
+        ctx.beginPath();
+        ctx.moveTo(x0, 95); ctx.lineTo(x0, 240 - r); ctx.quadraticCurveTo(x0, 240, x0 + r, 240);
+        ctx.lineTo(x0 + w - r, 240); ctx.quadraticCurveTo(x0 + w, 240, x0 + w, 240 - r); ctx.lineTo(x0 + w, 95);
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = 'rgba(255,255,255,0.62)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        const gl = o.glow ? o.glow(i) : 0;
+        if (gl > 0) {
+          ctx.globalAlpha = a * gl;
+          ctx.shadowColor = 'rgba(247,107,19,0.9)';
+          ctx.shadowBlur = 14;
+          ctx.strokeStyle = C.orange;
+          ctx.lineWidth = 2.2;
+          ctx.stroke();
+        }
+        ctx.restore();
+      });
+      // tiles
+      ACT_TILES.forEach((tl, k) => {
+        const sc = o.tileS(k);
+        if (sc <= 0.001) return;
+        const [x, y] = actXY(tl.i, tl.c, tl.r);
+        L.withScale(ctx, x + 10, y + 10, sc, () => {
+          ctx.fillStyle = tl.v === 2 ? C.sky : 'rgba(255,255,255,0.2)';
+          L.roundRect(ctx, x, y, 20, 20, 3.5);
+          ctx.fill();
+        });
+      });
+      // labels
+      ACT.jars.forEach((j, i) => {
+        const p = o.labelP(i);
+        if (p <= 0) return;
+        L.text(ctx, 0, { x: jarX(i) + 46, y: 261 + 6 * (1 - p), size: 13, lh: 15, lines: j.label, align: 'center', color: '#FFFFFF', alpha: p });
+      });
+      // answer token
+      const tk = o.tok;
+      if (tk && tk.size > 0.1) {
+        if (tk.string > 0) {
+          ctx.save();
+          ctx.globalAlpha = tk.string;
+          ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+          ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.moveTo(HANG[0], 6); ctx.lineTo(tk.x, tk.y - tk.size * 0.6); ctx.stroke();
+          ctx.restore();
+        }
+        (tk.trail || []).forEach(([dy, a]) => {
+          ctx.save(); ctx.filter = 'blur(1.5px)'; token(ctx, tk.x, tk.y - dy, tk.rot, tk.size, a); ctx.restore();
+        });
+        token(ctx, tk.x, tk.y, tk.rot, tk.size, tk.alpha ?? 1);
+      }
+      ctx.restore();
+    });
+  }
+  // Text block fitted to the left column (the card takes the right side).
+  function leftBlock(ctx, lines, maxW, maxSize) {
+    const w = Math.max(...lines.map(l => L.textWidth(ctx, l, 100)));
+    return Math.min(maxSize, Math.floor((100 * maxW) / w));
+  }
+  const TEXT_W = AX - 145 - 70;
+  // gentle swing of the hanging token, on absolute frames so 9.1 -> 9.2 is continuous
+  const hangPose = f => ({ x: HANG[0] + 4 * Math.sin(f / 9), y: HANG[1] + 2 * Math.sin(f / 7), rot: 0.26 + 0.12 * Math.sin(f / 9) });
+
   fx['9.1'] = (ctx, f, t, b) => {
     L.background(ctx, 'paper', f);
-    house(ctx, { slots: prog(t, 2, 4), scale: k => L.pop(t, 4 + 2 * k), skip: k => k === SLOT });
-    L.roofline(ctx, GH, E.outCubic(prog(t, 0, 16)));
-    L.text(ctx, t, { x: 145, y: 430, size: 170, lh: 170, lines: b.copy, motion: 'rise', start: 6, stagger: 4 });
+    const hp = hangPose(f);
+    activation(ctx, {
+      cardS: L.pop(t, 0, 12, 1.04),
+      jarA: i => E.outCubic(prog(t, 5 + 2 * i, 8)),
+      tileS: k => L.pop(t, 9 + 0.55 * k, 8, 1.15),
+      labelP: i => E.outCubic(prog(t, 14 + 2 * i, 10)),
+      tok: { ...hp, size: 22 * L.pop(t, 30, 10, 1.2), string: prog(t, 30, 6) },
+    });
+    const size = leftBlock(ctx, b.copy, TEXT_W, 160), lh = size * 1.0;
+    const y0 = 540 - (b.copy.length * lh) / 2 + 0.74 * size;
+    L.text(ctx, t, { x: 145, y: y0, size, lh, lines: b.copy, motion: 'rise', start: 6, stagger: 4 });
   };
   fx['9.2'] = (ctx, f, t, b) => {
     L.background(ctx, 'paper', f);
-    const landed = t >= 15;
-    house(ctx, { slots: 1, scale: () => 1, skip: k => k === SLOT });
-    L.roofline(ctx, GH, 1);
-    const [tx, ty] = tileXY(SLOT);
-    if (landed) dashedTile(ctx, tx, ty, 0);
-    let y = ty, rot = 0;
-    if (t < 15) {
-      const p = E.inCubic(prog(t, 6, 9));
-      y = lerp(-140, ty, p);
-      rot = lerp(-0.2, 0.08, p);
-      if (t >= 6) {
-        tile(ctx, tx, y - 150, C.orange, 1, rot, 0.14, 6);
-        tile(ctx, tx, y - 75, C.orange, 1, rot, 0.28, 3);
-      }
-    } else if (t < 27) {
-      y = ty + kf(t, [[15, 0], [19, -38], [23, 0], [25, -9], [27, 0]], E.outCubic);
-      rot = kf(t, [[15, 0.08], [20, -0.04], [27, 0]]);
-      const rp = prog(t, 15, 14);
+    const hp = hangPose(f);
+    let tok;
+    if (t < 6) {
+      tok = { ...hp, size: 22, string: 1 };
+    } else if (t < 15) {
+      // tiny lift, string lets go, token falls into the jar
+      const y = t < 9 ? lerp(hp.y, hp.y - 12, E.outCubic(prog(t, 6, 3))) : lerp(hp.y - 12, LAND[1], E.inCubic(prog(t, 9, 6)));
+      const k = prog(t, 6, 9);
+      tok = { x: lerp(hp.x, LAND[0], E.inOutCubic(k)), y, rot: lerp(hp.rot, 0, E.inOutCubic(k)), size: lerp(22, 20, k),
+        string: 1 - prog(t, 6, 3), trail: t >= 10 ? [[16, 0.3], [32, 0.14]] : [] };
+    } else {
+      const dy = kf(t, [[15, 0], [18, -9], [21, 0], [23, -3], [25, 0]], E.outCubic);
+      tok = { x: LAND[0], y: LAND[1] + dy, rot: kf(t, [[15, 0.12], [20, -0.06], [25, 0]]), size: 20, string: 0 };
+    }
+    const glow = i => (i === ACT.drop.jar && t >= 15 ? 1 - prog(t, 30, 30) : 0);
+    activation(ctx, { cardS: 1, jarA: () => 1, tileS: () => 1, labelP: () => 1, glow, tok });
+    // landing ripple
+    if (t >= 15 && t < 32) {
+      const rp = prog(t, 15, 16);
       ctx.save();
-      ctx.globalAlpha = 0.6 * (1 - rp);
-      ctx.strokeStyle = C.sky; ctx.lineWidth = 4;
-      L.roundRect(ctx, tx + 48 - 60 - 90 * rp, ty + 48 - 60 - 90 * rp, 120 + 180 * rp, 120 + 180 * rp, 24 + 30 * rp);
+      ctx.globalAlpha = 0.7 * (1 - rp);
+      ctx.strokeStyle = C.orange;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(AX + LAND[0] * AS, AY + LAND[1] * AS, 20 + 70 * E.outCubic(rp), 0, 7);
       ctx.stroke();
       ctx.restore();
     }
-    if (t >= 6) tile(ctx, tx, y, C.orange, 1, rot);
-    L.text(ctx, t, { x: 145, y: 432, size: 165, lh: 170, lines: b.copy.slice(0, 2), motion: 'rise', start: 2, stagger: 4 });
-    L.withScale(ctx, 352, 732, L.pop(t, 24), () => {
+    const lines = b.copy.slice(0, 2);
+    const size = leftBlock(ctx, lines, TEXT_W, 160), lh = size * 1.02;
+    const top = 540 - (2 * lh + 40 + 110) / 2;
+    const y0 = top + 0.78 * size;
+    L.text(ctx, t, { x: 145, y: y0, size, lh, lines, motion: 'rise', start: 2, stagger: 4 });
+    const py = top + 2 * lh + 40;
+    const pw = L.textWidth(ctx, b.copy[2], 60) + 100;
+    L.withScale(ctx, 145 + pw / 2, py + 55, L.pop(t, 24), () => {
       ctx.fillStyle = C.deepNavy;
-      L.roundRect(ctx, 140, 672, 425, 120, 60); ctx.fill();
-      L.text(ctx, 0, { x: 352, y: 754, size: 62, lines: [b.copy[2]], align: 'center', color: '#FFFFFF' });
+      L.roundRect(ctx, 145, py, pw, 110, 55); ctx.fill();
+      L.text(ctx, 0, { x: 145 + pw / 2, y: py + 76, size: 60, lines: [b.copy[2]], align: 'center', color: '#FFFFFF' });
     });
   };
   function closeCard(ctx, t, alpha, blur, dy) {
@@ -726,18 +857,21 @@
   };
 
   // ---------- frame entry ----------
-  function renderFrame(ctx, f) {
-    f = ((f % CONFIG.frames) + CONFIG.frames) % CONFIG.frames;
+  // Output frame -> source frame: the timeline is stretched by CONFIG.timeScale.
+  const totalFrames = Math.round(CONFIG.frames * CONFIG.timeScale);
+  function renderFrame(ctx, F) {
+    F = ((F % totalFrames) + totalFrames) % totalFrames;
+    const f = F / CONFIG.timeScale;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.globalAlpha = 1;
     ctx.filter = 'none';
     ctx.clearRect(0, 0, W, H);
-    const flash = CONFIG.flashes[f] || CONFIG.flashes[f - 1];
+    const flash = CONFIG.flashes[Math.floor(f)] || CONFIG.flashes[Math.floor(f) - 1];
     if (flash) { L.background(ctx, flash, f); return; }
     const b = CONFIG.beats.find(x => f >= x.start && f < x.end);
     ctx.save();
     fx[b.id](ctx, f, f - b.start, b);
     ctx.restore();
   }
-  window.SCENES = { renderFrame, fx };
+  window.SCENES = { renderFrame, fx, totalFrames };
 })();
